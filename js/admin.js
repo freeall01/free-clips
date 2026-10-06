@@ -42,7 +42,6 @@ async function uploadFile(file,path){
   if(error)throw error;
 }
 
-// Automatically read image dimensions when preview file is selected
 $('#previewFile')?.addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -76,7 +75,7 @@ $('#form')?.addEventListener('submit',async e=>{
     if(mode==='telegram' && !$('#telegramUrl').value.trim())throw Error('Telegram URL is required for Telegram mode.');
     const preview=$('#previewFile').files[0], file=$('#downloadFile').files[0];
     if(preview && !preview.type.startsWith('image/'))throw Error('Preview must be an image.');
-    if(file && file.size>100*1024*1024)throw Error('Direct website files are limited to 100 MB. Use Telegram mode for larger packs.');
+    if(file && file.size>50*1024*1024)throw Error('Direct website files are limited to 50 MB. Use Telegram mode for larger packs.');
     const id=current?.id||crypto.randomUUID();
     let previewPath=current?.preview_path||'', filePath=current?.file_path||'', size=current?.file_size_bytes||null;
     if(preview){previewPath=`previews/${id}-${Date.now()}-${preview.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;await uploadFile(preview,previewPath);}
@@ -104,4 +103,3 @@ $('#form')?.addEventListener('submit',async e=>{
   }catch(err){msg(err.message||String(err));}
 });
 session().then(s=>s&&list());
-      
