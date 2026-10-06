@@ -8,7 +8,6 @@ const bytes = n => {
   while(x>=1024 && i<u.length-1){x/=1024;i++;}
   return `${x.toFixed(x>=10||i===0?0:1)} ${u[i]}`;
 };
-const slugify = s => String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const qs = new URLSearchParams(location.search);
 
 function publicUrl(path) {
@@ -64,10 +63,9 @@ async function loadAsset(){
       <h1>${esc(a.title)}</h1>
       <p class="desc">${esc(a.description||'')}</p>
       <dl class="meta">
-        <div><dt>File</dt><dd>${esc(a.file_name||'')}</dd></div>
         <div><dt>Size</dt><dd>${esc(bytes(a.file_size_bytes))}</dd></div>
         <div><dt>Dimensions</dt><dd>${a.width&&a.height?`${a.width} × ${a.height}`:'—'}</dd></div>
-        <div><dt>Downloads</dt><dd id="dlCount">${Number(a.downloads||0)}</dd></div>
+        <div style="grid-column:1/-1"><dt>Downloads</dt><dd id="dlCount">${Number(a.downloads||0)}</dd></div>
       </dl>
       ${direct?`<a class="btn primary" id="downloadBtn" href="${esc(downloadUrl(a.file_path, a.file_name))}" rel="noopener">Download</a>`:
       a.telegram_url?`<a class="btn primary" href="${esc(a.telegram_url)}" target="_blank" rel="noopener">Download Pack</a>`:
