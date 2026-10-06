@@ -1,6 +1,27 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PNG Library</title><link rel="stylesheet" href="css/style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script defer src="js/app.js"></script></head>
-<body><header><div class="wrap nav"><a class="brand" href="index.html">PNG<span>LIBRARY</span></a><a href="admin.html">Admin</a></div></header>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Free Clips — Free PNG Downloads</title><meta name="description" content="Free original PNG assets and creator resources. Preview and download."><link rel="stylesheet" href="css/style.css">
+<style>
+.howto{margin-top:56px}
+.howto h2{margin:0 0 6px;font-size:24px;letter-spacing:-.3px}
+.howto>p{color:#929aa8;margin:0 0 20px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;list-style:none;padding:0;margin:0;counter-reset:s}
+.steps li{counter-increment:s;background:linear-gradient(180deg,#141823,#0f121a);border:1px solid #232a38;border-radius:18px;padding:18px}
+.steps li::before{content:counter(s);display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6c7cff,#9b6cff);font-weight:800;margin-bottom:10px}
+.steps b{display:block;margin-bottom:4px}
+.steps span{color:#929aa8;font-size:14px}
+.note{margin-top:16px;padding:14px 16px;border:1px solid rgba(142,162,255,.3);background:rgba(108,124,255,.08);border-radius:14px;color:#c7ccd7;font-size:14px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script defer src="js/app.js"></script></head>
+<body><header><div class="wrap nav"><a class="brand" href="index.html">FREE<span>CLIPS</span></a><a href="admin.html">Admin</a></div></header>
 <main class="wrap"><section class="hero"><p class="eyebrow">Original creator assets</p><h1>Free PNGs for creators.</h1><p>Discover original transparent PNG assets, effects and packs.</p><form id="searchForm" class="search"><input id="searchInput" placeholder="Search PNGs, effects, overlays…"><button>Search</button></form></section>
-<nav id="categoryNav" class="categories"></nav><section><div class="sectionhead"><h2>Latest assets</h2></div><div id="assetGrid" class="grid"><div class="empty">Loading…</div></div></section></main>
-<footer><div class="wrap">© Your PNG Library · Original assets only</div></footer></body></html>
+<nav id="categoryNav" class="categories"></nav><section><div class="sectionhead"><h2>Latest assets</h2></div><div id="assetGrid" class="grid"><div class="empty">Loading…</div></div></section>
+<section class="howto"><h2>How to download</h2><p>It takes less than a minute. No sign-up needed.</p>
+<ol class="steps">
+<li><b>Find an asset</b><span>Search by name or tap a category above.</span></li>
+<li><b>Open it</b><span>Tap the asset card to see the full preview and details.</span></li>
+<li><b>Tap Download</b><span>Press the Download button. The file saves to your Downloads folder.</span></li>
+<li><b>Use it</b><span>Open the file from your gallery or Files app and use it in your edits.</span></li>
+</ol>
+<div class="note">Large packs open a Telegram link instead. Tap <b>Download Pack</b>, then save the file from Telegram.</div>
+</section></main>
+<footer><div class="wrap">© Free Clips · Original assets only</div></footer></body></html>
