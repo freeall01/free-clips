@@ -15,6 +15,10 @@ function publicUrl(path) {
   if (!path) return '';
   return sb.storage.from('assets').getPublicUrl(path).data.publicUrl;
 }
+function downloadUrl(path, name) {
+  if (!path) return '';
+  return sb.storage.from('assets').getPublicUrl(path, { download: name || true }).data.publicUrl;
+}
 async function getAssets({search='', category='', limit=60}={}) {
   let q = sb.from('assets').select('*').eq('published', true).order('created_at',{ascending:false}).limit(limit);
   if(category) q=q.eq('category',category);
@@ -63,16 +67,21 @@ async function loadAsset(){
         <div><dt>File</dt><dd>${esc(a.file_name||'')}</dd></div>
         <div><dt>Size</dt><dd>${esc(bytes(a.file_size_bytes))}</dd></div>
         <div><dt>Dimensions</dt><dd>${a.width&&a.height?`${a.width} × ${a.height}`:'—'}</dd></div>
-        <div><dt>Downloads</dt><dd>${Number(a.downloads||0)}</dd></div>
+        <div><dt>Downloads</dt><dd id="dlCount">${Number(a.downloads||0)}</dd></div>
       </dl>
-      ${direct?`<a class="btn primary" id="downloadBtn" href="${esc(publicUrl(a.file_path))}" target="_blank" rel="noopener">Download PNG</a>`:
+      ${direct?`<a class="btn primary" id="downloadBtn" href="${esc(downloadUrl(a.file_path, a.file_name))}" rel="noopener">Download</a>`:
       a.telegram_url?`<a class="btn primary" href="${esc(a.telegram_url)}" target="_blank" rel="noopener">Download Pack</a>`:
       `<button class="btn disabled" disabled>Download unavailable</button>`}
       <div class="tags">${(a.tags||[]).map(t=>`<span>#${esc(t)}</span>`).join('')}</div>
     </div>
   </section>`;
   const btn=$('#downloadBtn');
-  if(btn) btn.addEventListener('click',async()=>{try{await sb.rpc('increment_download',{asset_id:a.id});}catch(e){}});
+  if(btn) btn.addEventListener('click',async()=>{
+    try{
+      await sb.rpc('increment_download',{asset_id:a.id});
+      const c=$('#dlCount'); if(c) c.textContent=Number(c.textContent||0)+1;
+    }catch(e){}
+  });
 }
 function bindSearch(){
   const form=$('#searchForm'); if(!form)return;
