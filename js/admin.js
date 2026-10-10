@@ -26,10 +26,10 @@ async function list(){
     <td><button data-edit="${a.id}">Edit</button> <button data-del="${a.id}" class="danger">Delete</button></td>
   </tr>`).join('');
 }
-function reset(){current=null;$('#form').reset();$('#assetId').value='';$('#storageMode').value='direct';$('#telegramWrap').hidden=true;$('#formTitle').textContent='Add Asset';}
+function reset(){current=null;$('#form').reset();$('#assetId').value='';$('#storageMode').value='direct';$('#formTitle').textContent='Add Asset';}
 async function edit(id){
   const {data:a}=await sbAdmin.from('assets').select('*').eq('id',id).single(); if(!a)return;
-  current=a;$('#assetId').value=a.id;$('#title').value=a.title;$('#slug').value=a.slug;$('#category').value=a.category;$('#description').value=a.description||'';$('#tags').value=(a.tags||[]).join(', ');$('#storageMode').value=a.storage_mode;$('#telegramUrl').value=a.telegram_url||'';$('#published').checked=a.published;$('#telegramWrap').hidden=a.storage_mode!=='telegram';$('#formTitle').textContent='Edit Asset';
+  current=a;$('#assetId').value=a.id;$('#title').value=a.title;$('#slug').value=a.slug;$('#category').value=a.category;$('#description').value=a.description||'';$('#tags').value=(a.tags||[]).join(', ');$('#storageMode').value=a.storage_mode;$('#telegramUrl').value=a.telegram_url||'';$('#published').checked=a.published;$('#formTitle').textContent='Edit Asset';
   scrollTo({top:0,behavior:'smooth'});
 }
 async function remove(id){
@@ -47,7 +47,6 @@ $('#loginForm')?.addEventListener('submit',async e=>{
 });
 $('#logout')?.addEventListener('click',()=>sbAdmin.auth.signOut().then(()=>location.reload()));
 $('#newAsset')?.addEventListener('click',reset);
-$('#storageMode')?.addEventListener('change',()=>$('#telegramWrap').hidden=$('#storageMode').value!=='telegram');
 $('#rows')?.addEventListener('click',e=>{const ed=e.target.dataset.edit,del=e.target.dataset.del;if(ed)edit(ed);if(del)remove(del);});
 $('#title')?.addEventListener('input',()=>{if(!current)$('#slug').value=slugify($('#title').value);});
 $('#form')?.addEventListener('submit',async e=>{
@@ -55,7 +54,9 @@ $('#form')?.addEventListener('submit',async e=>{
   try{
     const title=$('#title').value.trim(), slug=slugify($('#slug').value||title), mode=$('#storageMode').value;
     if(!title)throw Error('Title is required.');
-    if(mode==='telegram' && !$('#telegramUrl').value.trim())throw Error('Telegram URL is required for Telegram mode.');
+    let tgUrl=$('#telegramUrl').value.trim();
+    if(tgUrl && !/^https?:\/\//i.test(tgUrl))tgUrl='https://'+tgUrl;
+    if(mode==='telegram' && !tgUrl)throw Error('Telegram link is required for Telegram mode.');
     const preview=$('#previewFile').files[0], file=$('#downloadFile').files[0];
     if(preview && !preview.type.startsWith('image/'))throw Error('Preview must be an image.');
     if(file && file.size>100*1024*1024)throw Error('Direct website files are limited to 100 MB. Use Telegram mode for larger packs.');
@@ -63,7 +64,7 @@ $('#form')?.addEventListener('submit',async e=>{
     let previewPath=current?.preview_path||'', filePath=current?.file_path||'', size=current?.file_size_bytes||null;
     if(preview){previewPath=`previews/${id}-${Date.now()}-${preview.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;await uploadFile(preview,previewPath);}
     if(mode==='direct' && file){filePath=`files/${id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;await uploadFile(file,filePath);size=file.size;}
-    const payload={id,title,slug,description:$('#description').value.trim(),category:$('#category').value.trim()||'Other',tags:$('#tags').value.split(',').map(x=>x.trim()).filter(Boolean),preview_path:previewPath,file_path:mode==='direct'?filePath:null,telegram_url:mode==='telegram'?$('#telegramUrl').value.trim():null,storage_mode:mode,file_name:mode==='direct'?(file?.name||current?.file_name||''): (file?.name||current?.file_name||''),file_size_bytes:size,published:$('#published').checked,updated_at:new Date().toISOString()};
+    const payload={id,title,slug,description:$('#description').value.trim(),category:$('#category').value.trim()||'Other',tags:$('#tags').value.split(',').map(x=>x.trim()).filter(Boolean),preview_path:previewPath,file_path:mode==='direct'?filePath:null,telegram_url:tgUrl||null,storage_mode:mode,file_name:mode==='direct'?(file?.name||current?.file_name||''): (file?.name||current?.file_name||''),file_size_bytes:size,published:$('#published').checked,updated_at:new Date().toISOString()};
     const {error}=await sbAdmin.from('assets').upsert(payload);if(error)throw error;
     msg(current?'Updated successfully.':'Published successfully.');reset();await list();
   }catch(err){msg(err.message||String(err));}
