@@ -56,6 +56,10 @@ async function loadAsset(){
   if(error||!a){box.innerHTML='<div class="empty">Asset not found.</div>';return;}
   const preview=publicUrl(a.preview_path);
   const direct=a.storage_mode==='direct' && a.file_path;
+  const tg=(a.telegram_url||'').trim();
+  const dlBtn=direct?`<a class="btn primary" id="downloadBtn" href="${esc(downloadUrl(a.file_path, a.file_name))}" rel="noopener">Download</a>`:'';
+  const tgBtn=/^https?:\/\//i.test(tg)?`<a class="btn" id="telegramBtn" href="${esc(tg)}" target="_blank" rel="noopener" style="background:#229ED9">Download from Telegram</a>`:'';
+  const noBtn=(!dlBtn&&!tgBtn)?`<button class="btn disabled" disabled>Download unavailable</button>`:'';
   box.innerHTML=`<section class="asset-layout">
     <div class="preview"><img src="${esc(preview)}" alt="${esc(a.title)}"></div>
     <div class="asset-info">
@@ -67,9 +71,7 @@ async function loadAsset(){
         <div><dt>Dimensions</dt><dd>${a.width&&a.height?`${a.width} × ${a.height}`:'—'}</dd></div>
         <div style="grid-column:1/-1"><dt>Downloads</dt><dd id="dlCount">${Number(a.downloads||0)}</dd></div>
       </dl>
-      ${direct?`<a class="btn primary" id="downloadBtn" href="${esc(downloadUrl(a.file_path, a.file_name))}" rel="noopener">Download</a>`:
-      a.telegram_url?`<a class="btn primary" href="${esc(a.telegram_url)}" target="_blank" rel="noopener">Download Pack</a>`:
-      `<button class="btn disabled" disabled>Download unavailable</button>`}
+      ${dlBtn}${tgBtn}${noBtn}
       <div class="tags">${(a.tags||[]).map(t=>`<span>#${esc(t)}</span>`).join('')}</div>
     </div>
   </section>`;
