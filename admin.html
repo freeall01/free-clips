@@ -9,7 +9,7 @@
 <input type="hidden" id="assetId"><label>Title<input id="title" required></label><label>Slug<input id="slug" required></label><label>Category<input id="category" placeholder="Effects"></label><label>Tags<input id="tags" placeholder="glow, blue, effect"></label>
 <label class="wide">Description<textarea id="description" rows="4"></textarea></label>
 <label>Preview image<input id="previewFile" type="file" accept="image/*"></label><label>Storage mode<select id="storageMode"><option value="direct">Website direct download</option><option value="telegram">Telegram / external link</option></select></label>
-<label id="telegramWrap" class="wide">Telegram/external URL<input id="telegramUrl" type="url" placeholder="https://t.me/..."></label>
+<label id="telegramWrap" class="wide">Telegram link (optional — button shows only if filled)<input id="telegramUrl" type="url" placeholder="https://t.me/..."></label>
 <label>Download file (max 50 MB)<input id="downloadFile" type="file"></label><label class="check"><input id="published" type="checkbox" checked> Published</label>
 <div class="wide"><button class="btn primary">Save & Publish</button></div></form></div>
 <div class="panel"><h2>Assets</h2><div class="tablewrap"><table><thead><tr><th></th><th>Asset</th><th>Size</th><th>Storage</th><th>Status</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div></div></section></main></body></html>
