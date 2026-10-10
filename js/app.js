@@ -55,13 +55,15 @@ async function loadAsset(){
   const {data:a,error}=await sb.from('assets').select('*').eq('id',id).maybeSingle();
   if(error||!a){box.innerHTML='<div class="empty">Asset not found.</div>';return;}
   const preview=publicUrl(a.preview_path);
+  const pvUrl=a.preview_video_path?publicUrl(a.preview_video_path):'';
+  const pvHtml=pvUrl?`<video src="${esc(pvUrl)}" poster="${esc(preview)}" autoplay muted loop playsinline preload="auto" style="width:100%;max-height:70vh;object-fit:contain;display:block"></video>`:`<img src="${esc(preview)}" alt="${esc(a.title)}">`;
   const direct=a.storage_mode==='direct' && a.file_path;
   const tg=(a.telegram_url||'').trim();
   const dlBtn=direct?`<a class="btn primary" id="downloadBtn" href="${esc(downloadUrl(a.file_path, a.file_name))}" rel="noopener">Download</a>`:'';
   const tgBtn=/^https?:\/\//i.test(tg)?`<a class="btn" id="telegramBtn" href="${esc(tg)}" target="_blank" rel="noopener" style="background:#229ED9">Download from Telegram</a>`:'';
   const noBtn=(!dlBtn&&!tgBtn)?`<button class="btn disabled" disabled>Download unavailable</button>`:'';
   box.innerHTML=`<section class="asset-layout">
-    <div class="preview"><img src="${esc(preview)}" alt="${esc(a.title)}"></div>
+    <div class="preview">${pvHtml}</div>
     <div class="asset-info">
       <div class="pill">${esc(a.category)}</div>
       <h1>${esc(a.title)}</h1>
@@ -92,4 +94,3 @@ function bindSearch(){
   });
 }
 document.addEventListener('DOMContentLoaded',()=>{bindSearch();loadHome().catch(e=>console.error(e));loadAsset().catch(e=>console.error(e));});
-                                                               
