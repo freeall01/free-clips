@@ -70,3 +70,4 @@ $('#form')?.addEventListener('submit',async e=>{
   }catch(err){msg(err.message||String(err));}
 });
 session().then(s=>s&&list());
+                                               
