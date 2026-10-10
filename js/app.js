@@ -92,3 +92,4 @@ function bindSearch(){
   });
 }
 document.addEventListener('DOMContentLoaded',()=>{bindSearch();loadHome().catch(e=>console.error(e));loadAsset().catch(e=>console.error(e));});
+                                                               
