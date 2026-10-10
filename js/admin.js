@@ -1,17 +1,79 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin — PNG Library</title><link rel="stylesheet" href="css/style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script defer src="js/admin.js"></script></head>
-<body><header><div class="wrap nav"><a class="brand" href="index.html">PNG<span>LIBRARY</span></a><span>Admin</span></div></header>
-<main class="wrap admin">
-<p id="msg" class="msg"></p>
-<section id="loginView" class="panel"><h1>Admin login</h1><form id="loginForm" class="form"><input id="email" type="email" placeholder="Admin email" required><input id="password" type="password" placeholder="Password" required><button class="btn primary">Sign in</button></form></section>
-<section id="appView" hidden><div class="adminbar"><h1>Asset Manager</h1><div><button id="newAsset" class="btn">New asset</button> <button id="logout" class="btn">Logout</button></div></div>
-<div class="panel"><h2 id="formTitle">Add Asset</h2><form id="form" class="form two">
-<input type="hidden" id="assetId"><label>Title<input id="title" required></label><label>Slug<input id="slug" required></label><label>Category<input id="category" placeholder="Effects"></label><label>Tags<input id="tags" placeholder="glow, blue, effect"></label>
-<label class="wide">Description<textarea id="description" rows="4"></textarea></label>
-<label>Preview image<input id="previewFile" type="file" accept="image/*"></label><label>Upload type<select id="storageMode"><option value="direct">PNG / small file - Download button</option><option value="telegram">Video / big file - Telegram download only</option></select></label>
-<label class="wide">Preview video (optional, 2-3 sec, under 8 MB)<input id="previewVideo" type="file" accept="video/*"></label>
-<label id="telegramWrap" class="wide">Telegram link (required for Video type, optional for PNG)<input id="telegramUrl" type="url" placeholder="https://t.me/..."></label>
-<label id="downloadWrap">Download file (max 50 MB)<input id="downloadFile" type="file"></label><label id="sizeWrap" style="display:none">File size in MB (optional, shown on site)<input id="sizeMb" type="number" step="0.1" min="0" placeholder="e.g. 85"></label><label class="check"><input id="published" type="checkbox" checked> Published</label>
-<div class="wide"><button class="btn primary">Save & Publish</button></div></form></div>
-<div class="panel"><h2>Assets</h2><div class="tablewrap"><table><thead><tr><th></th><th>Asset</th><th>Size</th><th>Storage</th><th>Status</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div></div></section></main></body></html>
-  
+const sbAdmin = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+const $ = (s,r=document)=>r.querySelector(s);
+const bytes=n=>{if(!n)return '0 B';const u=['B','KB','MB','GB'];let i=0,x=Number(n);while(x>=1024&&i<3){x/=1024;i++;}return `${x.toFixed(i?1:0)} ${u[i]}`};
+const slugify=s=>String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const publicUrl=p=>p?sbAdmin.storage.from('assets').getPublicUrl(p).data.publicUrl:'';
+const msg=t=>{$('#msg').textContent=t;};
+
+let current=null;
+
+async function session(){
+  const {data}=await sbAdmin.auth.getSession();
+  if(!data.session){$('#loginView').hidden=false;$('#appView').hidden=true;return null;}
+  const {data:a}=await sbAdmin.from('admins').select('user_id').eq('user_id',data.session.user.id).maybeSingle();
+  if(!a){await sbAdmin.auth.signOut();msg('This account is not an admin.');return null;}
+  $('#loginView').hidden=true;$('#appView').hidden=false;return data.session;
+}
+async function list(){
+  const {data,error}=await sbAdmin.from('assets').select('*').order('created_at',{ascending:false});
+  if(error){msg(error.message);return;}
+  $('#rows').innerHTML=(data||[]).map(a=>`<tr>
+    <td><img class="mini" src="${publicUrl(a.preview_path)}"></td>
+    <td><b>${a.title}</b><small>${a.category}</small></td>
+    <td>${bytes(a.file_size_bytes)}</td>
+    <td>${a.storage_mode}</td>
+    <td>${a.published?'Published':'Hidden'}</td>
+    <td><button data-edit="${a.id}">Edit</button> <button data-del="${a.id}" class="danger">Delete</button></td>
+  </tr>`).join('');
+}
+function applyMode(){const t=$('#storageMode').value==='telegram';$('#downloadWrap').style.display=t?'none':'';$('#sizeWrap').style.display=t?'':'none';}
+function reset(){current=null;$('#form').reset();$('#assetId').value='';$('#storageMode').value='direct';applyMode();$('#formTitle').textContent='Add Asset';}
+async function edit(id){
+  const {data:a}=await sbAdmin.from('assets').select('*').eq('id',id).single(); if(!a)return;
+  current=a;$('#assetId').value=a.id;$('#title').value=a.title;$('#slug').value=a.slug;$('#category').value=a.category;$('#description').value=a.description||'';$('#tags').value=(a.tags||[]).join(', ');$('#storageMode').value=a.storage_mode;$('#telegramUrl').value=a.telegram_url||'';$('#published').checked=a.published;$('#sizeMb').value=a.storage_mode==='telegram'&&a.file_size_bytes?(a.file_size_bytes/1048576).toFixed(1):'';applyMode();$('#formTitle').textContent='Edit Asset';
+  scrollTo({top:0,behavior:'smooth'});
+}
+async function remove(id){
+  if(!confirm('Delete this asset record? Files are not automatically removed.'))return;
+  const {error}=await sbAdmin.from('assets').delete().eq('id',id); if(error)msg(error.message); else {msg('Deleted');list();}
+}
+async function uploadFile(file,path){
+  const {error}=await sbAdmin.storage.from('assets').upload(path,file,{upsert:true,contentType:file.type||'application/octet-stream'});
+  if(error)throw error;
+}
+$('#loginForm')?.addEventListener('submit',async e=>{
+  e.preventDefault();msg('Signing in…');
+  const {error}=await sbAdmin.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});
+  if(error)msg(error.message);else {msg('');await session();await list();}
+});
+$('#logout')?.addEventListener('click',()=>sbAdmin.auth.signOut().then(()=>location.reload()));
+$('#newAsset')?.addEventListener('click',reset);
+$('#storageMode')?.addEventListener('change',applyMode);
+$('#rows')?.addEventListener('click',e=>{const ed=e.target.dataset.edit,del=e.target.dataset.del;if(ed)edit(ed);if(del)remove(del);});
+$('#title')?.addEventListener('input',()=>{if(!current)$('#slug').value=slugify($('#title').value);});
+$('#form')?.addEventListener('submit',async e=>{
+  e.preventDefault();
+  try{
+    const title=$('#title').value.trim(), slug=slugify($('#slug').value||title), mode=$('#storageMode').value;
+    if(!title)throw Error('Title is required.');
+    let tgUrl=$('#telegramUrl').value.trim();
+    if(tgUrl && !/^https?:\/\//i.test(tgUrl))tgUrl='https://'+tgUrl;
+    if(mode==='telegram' && !tgUrl)throw Error('Telegram link is required for Telegram mode.');
+    const preview=$('#previewFile').files[0], file=$('#downloadFile').files[0], pv=$('#previewVideo').files[0];
+    if(pv && !pv.type.startsWith('video/'))throw Error('Preview video must be a video file.');
+    if(pv && pv.size>8*1024*1024)throw Error('Preview video must be under 8 MB. Make it 2-3 seconds, 480p.');
+    if(preview && !preview.type.startsWith('image/'))throw Error('Preview must be an image.');
+    if(file && file.size>100*1024*1024)throw Error('Direct website files are limited to 100 MB. Use Telegram mode for larger packs.');
+    const id=current?.id||crypto.randomUUID();
+    let previewPath=current?.preview_path||'', filePath=current?.file_path||'', size=current?.file_size_bytes||null;
+    let pvPath=current?.preview_video_path||'';
+    if(pv){pvPath=`previews/${id}-${Date.now()}-v-${pv.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;await uploadFile(pv,pvPath);}
+    if(preview){previewPath=`previews/${id}-${Date.now()}-${preview.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;await uploadFile(preview,previewPath);}
+    if(mode==='direct' && file){filePath=`files/${id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;await uploadFile(file,filePath);size=file.size;}
+    if(mode==='telegram'){const m=parseFloat($('#sizeMb').value);size=m>0?Math.round(m*1048576):null;}
+    const payload={id,title,slug,description:$('#description').value.trim(),category:$('#category').value.trim()||'Other',tags:$('#tags').value.split(',').map(x=>x.trim()).filter(Boolean),preview_path:previewPath,preview_video_path:pvPath||null,file_path:mode==='direct'?filePath:null,telegram_url:tgUrl||null,storage_mode:mode,file_name:mode==='direct'?(file?.name||current?.file_name||''): (file?.name||current?.file_name||''),file_size_bytes:size,published:$('#published').checked,updated_at:new Date().toISOString()};
+    const {error}=await sbAdmin.from('assets').upsert(payload);if(error)throw error;
+    msg(current?'Updated successfully.':'Published successfully.');reset();await list();
+  }catch(err){msg(err.message||String(err));}
+});
+session().then(s=>s&&list());
